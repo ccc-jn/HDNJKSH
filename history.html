@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>内经发展史</title>
+    <style>
+        @font-face {
+            font-family: 'Aa极简护眼 挽风宋体';
+            src: url("fonts/AaJJHYWFST.woff") format('woff');            
+            font-weight: normal;
+            font-style: normal;
+        }  
+        @font-face {
+            font-family: 'AaGuDian';
+            src: 
+                local('AaGuDianKeBenSong'),
+                url('fonts/AaGuDianKeBenSong-2.ttf') format('truetype');
+        }
+
+        /* ========== 基础布局 ========== */
+        :root {
+            --base-rem: 1rem; /* 基准单位 */
+            --scale-factor: calc(var(--base-rem) / 100); /* 比例因子 */
+            --era-title-color: #9b4f18; 
+            --name-color: #9b4f18;      
+            --main-color: #302e2c; /* 主色调 */
+            --light-color: #9b4f18; /* 高亮色 */
+            --bg-color: rgba(245, 239, 233, 0.95); /* 背景色 */
+            --text-color: #aa7c5d; /* 正文颜色 */
+        }
+        body {
+            color: var(--text-color);
+            font-family: 'AaGuDian', 'STKaiti', 'KaiTi', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            font-size: calc(18 * var(--scale-factor));
+        }
+        
+        .timeline-container {
+            background-image: url('image/background1.jpg');
+            background-size: cover;
+            background-position: center calc(30% - 10 * var(--scale-factor));
+            background-repeat: no-repeat;
+            background-attachment: local;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        /* ========== 时间轴轨道 ========== */
+        .timeline-track {
+            user-select: none; 
+            overflow: visible;
+            pointer-events: auto;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            width: 500vw;
+            height: 100%;
+            scroll-snap-type: x mandatory;
+            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* ========== 时代页面样式 ========== */
+        .era-page {
+            flex: 0 0 100vw;
+            height: 90vh;
+            scroll-snap-align: start;
+            overflow-y: auto;
+            padding: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ========== 时代卡片设计 ========== */
+        .era-card {
+            background: var(--bg-color);
+            border: 1px solid rgba(139, 69, 19, 0.1);
+            color: var(--main-color); 
+            width: 65%;
+            height: 75%;
+            max-width: 1200px;
+            min-height: calc(600 * var(--scale-factor));
+            margin: calc(20 * var(--scale-factor)) auto; /* 减少 margin-top，使卡片上移 */
+            padding: calc(40 * var(--scale-factor));
+            border-radius: 12px;
+            box-shadow: 0 12px 24px -6px rgba(139,69,19,0.15);
+            transform-style: preserve-3d;
+            animation: cardFloat 8s ease-in-out infinite;
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* 新增：使子元素垂直居中 */
+            position: relative;
+        }
+
+        /* ========== 新版时间轴布局 ========== */
+        .timeline-wrapper {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            margin-bottom: 20px;
+            margin-top: -30px; /* 上移卡片 */
+        }
+
+        .era-title-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .era-title {
+            color: var(--era-title-color);
+            font-family: 'Aa极简护眼 挽风宋体';
+            font-size: 2.3em;
+            margin: 0;
+            display: inline; /* 让标题和年份在同一行 */
+        }
+
+        .era-period {
+            color: var(--main-color);
+            font-family: 'Aa极简护眼 挽风宋体';
+            font-size: 1.2em; /* 增大年份字体大小 */
+            margin-left: 10px; /* 调整年份与标题的间距 */
+            display: inline; /* 让标题和年份在同一行 */
+        }
+        
+        .timeline-main {
+            position: relative;
+            padding-left: 20px;
+            margin-top: 20px; /* 新增上边距 */
+        }
+
+        .timeline-main::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--light-color);
+        }
+
+        .timeline-event {
+            position: relative;
+            margin-bottom: 10px;
+            padding-left: 20px;
+        }
+
+        .timeline-event::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 8px;
+            width: 14px;
+            height: 14px;
+            background: var(--light-color);
+            border-radius: 50%;
+        }
+
+        .timeline-event-time {
+            color: var(--light-color);
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        /* ========== 人物展示模块 ========== */
+        .representative-people {
+            display: flex;
+            flex-direction: column;
+            gap: calc(25 * var(--scale-factor));
+            align-items: flex-start;
+            width: 41%;
+            position: relative;
+        }
+
+        .representative-person {
+            display: flex;
+            flex-direction: row;
+            gap: calc(20 * var(--scale-factor));
+            background: rgb(250, 240, 230);
+            min-height: calc(250 * var(--scale-factor));
+            border-radius: calc(16 * var(--scale-factor));
+            padding: calc(20 * var(--scale-factor));
+            transition: all 0.3s;
+            box-shadow: 0 6px 12px rgba(255, 106, 0, 0.08);
+        }
+
+        .representative-person img {
+            width: calc(210 * var(--scale-factor)) !important;
+            height: calc(250 * var(--scale-factor)) !important;
+            flex-shrink: 0;
+            max-height: calc(250 * var(--scale-factor));
+            object-fit: cover;
+            border-radius: calc(12 * var(--scale-factor));
+        }
+
+        .person-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .person-info p:first-child {
+            font-weight: bold;
+            font-size: 1.6em;
+            margin-bottom: 10px;
+            color: var(--name-color);
+        }
+        .person-description {
+            font-size:1.1em;
+            line-height: 1.65; /* 增加行高 */
+        }
+
+        /* ========== 导航指示器 ========== */
+        .timeline-nav {
+            position: fixed;
+            bottom: calc(30 * var(--scale-factor)); 
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: calc(25 * var(--scale-factor));
+            z-index: 100;
+            padding: 0 calc(15 * var(--scale-factor));
+        }
+
+        .nav-dot {
+            padding: calc(8 * var(--scale-factor)) calc(15 * var(--scale-factor));
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-dot::before {
+            content: attr(data-era);
+            color: var(--main-color);
+            font-family: 'Aa极简护眼 挽风宋体';
+            font-size: calc(20 * var(--scale-factor));
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .nav-dot.active {
+            transform: scale(1.1);
+        }
+
+        .nav-dot.active::before {
+            color: var(--light-color);
+            font-weight: bold;
+        }
+
+        .nav-dot.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            width: 60%;
+            height: calc(2 * var(--scale-factor));
+            bottom: calc(-5 * var(--scale-factor)); 
+            background: linear-gradient(90deg, var(--main-color) 0%, var(--light-color) 100%);
+            transform: translateX(-50%);
+        }
+
+        /* 响应式设计调整 */
+        @media (max-width: 1024px) {
+            .era-card {
+                flex-direction: column;
+                padding: 30px;
+            }
+            
+            .era-content,
+            .representative-people {
+                width: 100%;
+            }
+            
+            .representative-people {
+                margin-top: 30px;
+            }
+            
+            .representative-person img {
+                width: 150px;
+                height: 180px;
+            }
+
+            .era-title-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .era-period {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .era-card {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .era-title {
+                font-size: 1.8em;
+            }
+            
+            .representative-person {
+                flex-direction: column;
+            }
+            
+            .representative-person img {
+                width: 100%;
+                height: auto;
+                max-height: 250px;
+            }
+            
+            .timeline-nav {
+                gap: 15px;
+                bottom: 20px;
+            }
+        }
+
+        /* ========== 动画定义 ========== */
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 新增CSS属性，将正文整体往下移 */
+       .era-content {
+            flex:1;
+            min-width: 0;
+            margin-left: calc(20 * var(--scale-factor)); 
+            padding-right: calc(30 * var(--scale-factor));
+            margin-top: 40px;
+            font-size: 110%;
+            left: 10%;
+        }
+
+        .nav-icon {
+            position: fixed;
+            left: 0.2rem;
+            top: 0.3rem;
+            width: 0.7rem;
+            height: 0.7rem;
+            cursor: pointer;
+            z-index: 1003; /* 导航最高层级 */
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: url('images/daohang4.png') center/contain no-repeat; /* 自定义图标 */
+        }
+        .nav-icon:hover {
+            transform: scale(0.9);
+        }
+        /* Three.js画布层级控制 */
+        canvas {
+            z-index: 1 !important;
+            pointer-events: auto !important;
+        }
+        
+        /* 侧边菜单 */        
+        .side-menu {
+            position: fixed;
+            left: -10rem;
+            top: 0.3rem;
+            background: rgba(237, 217, 180, 0.6);
+            padding: 0.1rem 0.12rem;
+            border-radius: 0.8em;
+            box-shadow: none;
+            transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 更流畅的动画 */
+            z-index: 1002; /* 提升层级在文字面板上方 */
+            display: flex;
+            flex-direction: row; /* 改为横向排列 */
+            gap: 0; /* 增加间距 */
+            align-items: center;
+        }
+        .side-menu.active {
+            left: 1.1rem;
+        }
+        .side-menu a {
+            position: relative;
+            font-family: 'Aa极简护眼 挽风宋体';
+            font-weight: bold !important;
+            font-size: 0.29rem;
+            color: #68340f;
+            text-decoration: none;
+            white-space: nowrap;
+            padding: 0.06rem 0.15rem;
+            border-radius: 0.5rem;
+            transition: 0.3s;
+        }
+
+        /* 为除最后一个菜单项外的所有项添加右侧竖线 */
+        .side-menu a:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            right: -5px; /* 根据gap值调整位置 */
+            font-weight: bold !important;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2px;   
+            height: 60%; /* 控制竖线高度为字高的60% */
+            background-color: #4c3832;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav-icon" id="navTrigger"></div>
+    <div class="side-menu" id="sideMenu">
+        <a href="index.html">首页</a> 
+        <a href="sunburt.html">病机玄钥</a>
+        <a href="Ahealth.html">顺时养元</a>
+        <a href="wuxing.html">五行五脏</a>
+        <a href="history.html">岐黄溯古</a>
+    </div>
+    <!-- 时间轴容器 -->
+    <div class="timeline-container">
+        <!-- 时间轴轨道 -->
+        <div class="timeline-track">
+            <!-- 先秦时期 -->
+            <div class="era-page">
+                <div class="era-card">
+                    <div class="era-content">
+                        <div class="timeline-wrapper">
+                            <div class="era-title-container">
+                                <h2 class="era-title">先秦时期</h2>
+                                <span class="era-period">（公元前5世纪前）</span>
+                            </div>
+                            <div class="timeline-main">
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">约公元前3000年 - 公元前2000年</div>
+                                    <h3>医学实践与理论启蒙</h3>
+                                    <p>● 砭石、针灸疗法初现，开始利用简单工具治疗疾病</p>
+                                    <p>● 阴阳五行理论初步形成，用于解释自然现象和人体健康</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">约公元前2000年 - 公元前1000年</div>
+                                    <h3>知识传承开端</h3>
+                                    <p>● 口传医学知识体系开始构建，经验在部落间传播</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="representative-people">
+                        <div class="representative-person">
+                            <img src="image/伏羲.jpg" alt="伏羲">
+                            <div class="person-info">
+                                <p>伏羲</p>
+                                <p class="person-description">华夏民族人文先始，相传其创立八卦，开启了中华民族的文化之源，在医学领域的贡献为早期医学理论的形成奠定了基础。</p>
+                            </div>
+                        </div>
+                        <div class="representative-person">
+                            <img src="image/神农.jpg" alt="神农">
+                            <div class="person-info">
+                                <p>神农</p>
+                                <p class="person-description">传说中的农业和医药的发明者，亲尝百草，发现了许多草药的用药价值，对中医药的起源和发展有重大贡献。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 战国西汉 -->
+            <div class="era-page">
+                <div class="era-card">
+                    <div class="era-content">
+                        <div class="timeline-wrapper">
+                            <div class="era-title-container">
+                                <h2 class="era-title">战国 - 西汉</h2>
+                                <span class="era-period">（前5世纪 - 公元1世纪）</span>
+                            </div>
+                            <div class="timeline-main">
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">约公元前475年 - 公元前221年</div>
+                                    <h3>理论体系构建</h3>
+                                    <p>● 《素问》《灵枢》核心篇章形成，奠定中医理论基石</p>
+                                    <p>● 确立脏腑经络理论体系，构建中医诊断治疗框架</p>
+                                    <p>● 提出阴阳五行学说在医学中的应用，解释人体生理病理</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">约公元前202年 - 公元8年</div>
+                                    <h3>文献传承突破</h3>
+                                    <p>● 出现早期竹简版本，推动医学知识系统化记录</p>
+                                    <p>● 开始形成医学理论的文字化传承体系，摆脱单纯口传模式</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">约公元前202年 - 公元8年</div>
+                                    <h3>医学实践发展</h3>
+                                    <p>● 针灸疗法理论化，明确经络穴位的临床应用</p>
+                                    <p>● 药物治疗经验开始总结，为后世方剂学奠定基础</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="representative-people">
+                        <div class="representative-person">
+                            <img src="image/黄帝.jpg" alt="黄帝">
+                            <div class="person-info">
+                                <p>黄帝</p>
+                                <p class="person-description">古华夏部落联盟首领，华夏民族共主，被尊为中华"人文初祖"。在医学方面，与岐伯等臣子的问答被整理成《黄帝内经》，奠定了中医理论基础。</p>
+                            </div>
+                        </div>
+                        <div class="representative-person">
+                            <img src="image/岐伯.jpg" alt="岐伯">
+                            <div class="person-info">
+                                <p>岐伯</p>
+                                <p class="person-description">黄帝时期的名医，被尊为"医祖"，与黄帝的问答构成了《黄帝内经》的主要内容，对中医理论的形成和发展做出了开创性贡献。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 唐代发展 -->
+            <div class="era-page">
+                <div class="era-card">
+                    <div class="era-content">
+                        <div class="timeline-wrapper">
+                            <div class="era-title-container">
+                                <h2 class="era-title">唐代发展</h2>
+                                <span class="era-period">（618 - 907）</span>
+                            </div>
+                            <div class="timeline-main">
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">762年</div>
+                                    <h3>文献注释与完善</h3>
+                                    <p>● 王冰补注《黄帝内经素问》，深入阐释经义</p>
+                                    <p>● 增补七篇大论，完善《内经》理论体系</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">618年 - 907年</div>
+                                    <h3>学术交流与传播</h3>
+                                    <p>● 唐代医学教育兴盛，《内经》成为重要教材</p>
+                                    <p>● 与周边国家医学交流频繁，推动《内经》对外传播</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">618年 - 907年</div>
+                                    <h3>临床实践发展</h3>
+                                    <p>● 基于《内经》理论，临床各科辨证论治更趋规范</p>
+                                    <p>● 养生理论依据《内经》进一步发展，形成系统养生方法</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="representative-people">
+                        <div class="representative-person">
+                            <img src="image/王冰.jpg" alt="王冰">
+                            <div class="person-info">
+                                <p>王冰</p>
+                                <p class="person-description">唐代医学家，花费十二年时间注解《黄帝内经素问》，并补入七篇大论，使《内经》得以完整流传，对中医理论的传承和发展贡献巨大。</p>
+                            </div>
+                        </div>
+                        <div class="representative-person">
+                            <img src="image/孙思邈.jpg" alt="孙思邈">
+                            <div class="person-info">
+                                <p>孙思邈</p>
+                                <p class="person-description">唐代医药学家、道士，被后人尊称为"药王"。他著有《千金方》，集唐代以前诊疗经验之大成，对后世医家影响极大。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 宋金元时期 -->
+            <div class="era-page">
+                <div class="era-card">
+                    <div class="era-content">
+                        <div class="timeline-wrapper">
+                            <div class="era-title-container">
+                                <h2 class="era-title">宋金元时期</h2>
+                                <span class="era-period">（960 - 1368）</span>
+                            </div>
+                            <div class="timeline-main">
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">1057年</div>
+                                    <h3>理论研究深化</h3>
+                                    <p>● 林亿等校正医书局校勘《素问》，提高文献准确性</p>
+                                    <p>● 金元四大家基于内经发展不同学派，丰富中医理论</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">1041年 - 1048年</div>
+                                    <h3>印刷传播</h3>
+                                    <p>● 首次大规模印刷刊行，加速医学知识普及</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">960年 - 1368年</div>
+                                    <h3>临床创新</h3>
+                                    <p>● 各学派在临床实践中创新治疗方法</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="representative-people">
+                        <div class="representative-person">
+                            <img src="image/张元素.jpg" alt="张元素">
+                            <div class="person-info">
+                                <p>张元素</p>
+                                <p class="person-description">金代著名医家，易水学派创始人，创立"脏腑辨证"理论体系，著有《医学启源》，对中医诊断学发展有重要贡献。</p>
+                            </div>
+                        </div>
+                        <div class="representative-person">
+                            <img src="image/刘完素.jpg" alt="刘完素">
+                            <div class="person-info">
+                                <p>刘完素</p>
+                                <p class="person-description">金元四大家之一，寒凉派创始人，以《内经》理论为基础，创立"火热论"，对温病学的发展有深远影响。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 明清时期 -->
+            <div class="era-page">
+                <div class="era-card">
+                    <div class="era-content">
+                        <div class="timeline-wrapper">
+                            <div class="era-title-container">
+                                <h2 class="era-title">明清时期</h2>
+                                <span class="era-period">（1368 - 1911）</span>
+                            </div>
+                            <div class="timeline-main">
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">1624年</div>
+                                    <h3>注释研究高峰</h3>
+                                    <p>● 张景岳《类经》系统分类注释，便于学习研究</p>
+                                    <p>● 马莳《黄帝内经素问注证发微》《灵枢注证发微》，深入解读经文</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">17世纪 - 19世纪</div>
+                                    <h3>理论应用拓展</h3>
+                                    <p>● 温病学派基于内经发展新理论，应对传染性疾病</p>
+                                </div>
+                                <div class="timeline-event">
+                                    <div class="timeline-event-time">1368年 - 1911年</div>
+                                    <h3>医学教育完善</h3>
+                                    <p>● 建立更系统的医学教育体系，培养众多医家</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="representative-people">
+                        <div class="representative-person">
+                            <img src="image/张景岳.jpg" alt="张景岳">
+                            <div class="person-info">
+                                <p>张景岳</p>
+                                <p class="person-description">明代著名医学家，著《类经》，将《内经》分类注释，系统整理了中医理论体系，对后世影响深远。</p>
+                            </div>
+                        </div>
+                        <div class="representative-person">
+                            <img src="image/李时珍.jpg" alt="李时珍">
+                            <div class="person-info">
+                                <p>李时珍</p>
+                                <p class="person-description">明代杰出医药学家，著《本草纲目》，其药物理论深受《内经》影响，被誉为"东方医药巨典"。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航点 -->
+    <div class="timeline-nav">
+        <div class="nav-dot active" data-era="先秦时期"></div>
+        <div class="nav-dot" data-era="战国西汉"></div>
+        <div class="nav-dot" data-era="唐代发展"></div>
+        <div class="nav-dot" data-era="宋金元"></div>
+        <div class="nav-dot" data-era="明清时期"></div>
+    </div>
+
+    <script>
+        !function(){
+  const setRem = () => {
+    const screenWidth = document.documentElement.clientWidth
+    // 基准屏幕宽度设为1920px，基准rem值设为100px（方便换算）
+    const remValue = (screenWidth / 1920 * 100).toFixed(2)
+    document.documentElement.style.fontSize = remValue + 'px'
+    
+    // 设置最大最小限制
+    const computedSize = parseFloat(remValue)
+    document.documentElement.style.fontSize = 
+      Math.min(Math.max(computedSize, 50), 100) + 'px' // 限制在50px-100px之间
+
+      // 动态调整背景定位
+    const container = document.querySelector('.timeline-container');
+    if(container) {
+    const offset = window.innerWidth / 1920 * 100;
+    container.style.backgroundPositionY = `calc(30% - ${offset}px)`;
+    }
+  }
+
+
+  // 初始化执行
+  setRem()
+  // 添加防抖监听
+  let timer = null
+  window.addEventListener('resize', () => {
+    timer && clearTimeout(timer)
+    timer = setTimeout(setRem, 200)
+  })
+}()
+        // 获取DOM元素
+        const track = document.querySelector('.timeline-track');
+        const dots = document.querySelectorAll('.nav-dot');
+        const pages = document.querySelectorAll('.era-page');
+        let currentIndex = 0;
+
+        // 更新导航点状态
+        function updateDots(index) {
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+
+        // 滚动到指定页面
+        function scrollToPage(index) {
+            currentIndex = index;
+            track.style.transform = `translateX(-${currentIndex * 100}vw)`;
+            updateDots(currentIndex);
+        }
+
+        // 为导航点添加点击事件
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                scrollToPage(index);
+            });
+        });
+
+        // 添加键盘左右箭头导航
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                scrollToPage(currentIndex - 1);
+            } else if (e.key === 'ArrowRight' && currentIndex < pages.length - 1) {
+                scrollToPage(currentIndex + 1);
+            }
+        });
+
+        // 添加触摸滑动支持
+        let startX = 0;
+        let isDragging = false;
+
+        track.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+        }, { passive: true });
+
+        track.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const x = e.touches[0].clientX;
+            const diff = startX - x;
+            if (Math.abs(diff) > 50) {
+                isDragging = false;
+                if (diff > 0 && currentIndex < pages.length - 1) {
+                    scrollToPage(currentIndex + 1);
+                } else if (diff < 0 && currentIndex > 0) {
+                    scrollToPage(currentIndex - 1);
+                }
+            }
+        }, { passive: true });
+
+        track.addEventListener('touchend', () => {
+            isDragging = false;
+        }, { passive: true });
+
+        // 添加鼠标拖动支持
+        let startMouseX = 0;
+        let isMouseDragging = false;
+
+        track.addEventListener('mousedown', (e) => {
+            startMouseX = e.clientX;
+            isMouseDragging = true;
+            track.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isMouseDragging) return;
+            const x = e.clientX;
+            const diff = startMouseX - x;
+            if (Math.abs(diff) > 50) {
+                isMouseDragging = false;
+                if (diff > 0 && currentIndex < pages.length - 1) {
+                    scrollToPage(currentIndex + 1);
+                } else if (diff < 0 && currentIndex > 0) {
+                    scrollToPage(currentIndex - 1);
+                }
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isMouseDragging = false;
+            track.style.cursor = '';
+        });
+        // 添加导航交互功能
+        const navTrigger = document.getElementById('navTrigger');
+        const sideMenu = document.getElementById('sideMenu');
+        
+        // 点击图标    
+        navTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sideMenu.classList.toggle('active');
+        });
+
+        // 点击页面其他区域关闭菜单
+        document.addEventListener('click', () => {
+            sideMenu.classList.remove('active');
+        });
+    </script>
+</body>
+
+</html>    
