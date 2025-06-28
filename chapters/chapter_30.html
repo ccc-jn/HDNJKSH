@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>章节图</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Aa古典刻本宋';
+            src: url("fonts/AaGuDianKeBenSong-2.ttf") format('truetype');           
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Aa美人篆';
+            src: url("fonts/AaMeirenzhuan.woff") format('woff');           
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Aa极简护眼 挽风宋体';
+            src: url("fonts/AaJJHYWFST.woff") format('woff');            
+            font-weight: normal;
+            font-style: normal;
+        } 
+        
+        .text-fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0; /* 确保 canvas 在底层 */           
+        }
+
+        h1 {
+            position: absolute;
+            top: 15%; /* 使用百分比定位 */
+            right: 3.1%; /* 使用百分比定位 */
+            color: #68340f;
+            z-index: 10000;
+            font-family: 'Aa美人篆', sans-serif !important;
+            font-size: 6vw; /* 使用视口宽度的百分比 */
+            writing-mode: vertical-lr;
+            letter-spacing: 2px;
+        }
+        .title-bg-container {
+            position: absolute;
+            z-index: 9999;
+            pointer-events: none;
+            transition: all 0.3s;
+          }
+          
+          .title-bg {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transform-origin: center;
+          }
+        .echarts-text {
+            font-family: 'Aa古典刻本宋';
+        }
+
+        html, body {
+            font-family: "Aa古典刻本宋", "STKaiti", cursive !important;
+            font-weight: 30;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        #main {
+            width: 100%;
+            height: 100%;
+            background: url(0.jpg);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            position: relative;
+        }
+
+        #canvasContainer {
+            position: absolute;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        #chartContainer {
+            width: 100%;
+            height: 100%;
+        }
+
+        .segment-label {
+            position: absolute;
+            color: #7C623F;
+            font-size: 1.2vw; /* 使用视口宽度的百分比 */
+            font-weight: bold;
+            white-space: normal;
+            pointer-events: none;
+            width: 15vw; /* 使用视口宽度的百分比 */
+            line-height: 1.3;
+            text-align: center;
+            z-index: 10000;
+            font-family: "Aa古典刻本宋";
+        }
+
+        .back-button {
+        position: fixed;
+        top: 4%;     /* 距顶部距离 */
+        left: 2%;    /* 距左侧距离 */
+        z-index: 100000;
+        cursor: pointer;
+        width: 55px;   /* 容器固定宽度 */
+        height: 55px;  /* 容器固定高度 */
+        overflow: hidden; /* 确保图片不超出容器 */
+        transition: all 0.3s ease;
+    }
+
+    /* 新增图片样式 */
+    .back-button img {
+        width: 100%;   /* 图片宽度填满容器 */
+        height: 100%;  /* 图片高度填满容器 */
+        object-fit: contain; /* 保持图片比例 */
+        padding: 0px;  /* 图片内边距 */
+    }
+
+    .back-button:hover {
+        transform: scale(1.1);
+        background: rgba(255,255,255,0); /* 悬停背景色 */
+        box-shadow: 0 0 10px rgba(124, 98, 63, 0);
+    }
+    </style>
+</head>
+<body>
+    <a class="back-button" onclick="window.history.back()">
+        <img src="daohang4.png" alt="返回按钮">
+    </a>    
+    <div id="main">
+        <div id="chartContainer"></div>
+        <div id="canvasContainer">
+            <canvas id="myCanvas"></canvas>
+        </div>
+        <h1 >阳明脉解篇·三十</h1>               
+        <div id="labelContainer"></div>
+    </div>
+    <div class="title-bg-container">
+        <img src="images/kuang1.png" class="title-bg">
+      </div>
+    <script>
+        // 统一样式配置
+        const styleConfig = {
+
+            hoverStyle: {
+                scale: 1.1,
+                shadow: '0 0 15px rgba(124, 98, 63, 0.8)',
+                labelBg: 'rgba(251, 247, 240, 0.9)'
+            },
+            
+            borderColor: '#7C623F',
+            dashLineColor: 'rgba(124, 98, 63, 0.6)',
+            chartBorderWidth: 5,
+            circleBorderWidth: 2,
+            dashLineWidth: 1,
+            solidLineWidth: 2,
+            chartRadius: ['60%', '90%'],
+            circleMultiplier: 1.6,
+            solidLineOffset: 0.03,
+            dashLineOffset: 0.06,
+            segmentLine: {
+                length: 50,
+                width: 1.5,
+                dotSize: 4,
+                offset: 7,
+                labelOffset: 25
+            },
+            
+
+            labels: [
+            "阳明属土\n木克土惊\n闻音惕动\n五行相胜",
+            "经多血气\n外邪发热\n热盛恶火\n阳亢灼肌",
+            "气逆喘闷\n恶见人烟\n厥及内脏\n病深则殆",
+            "阳盛神乱\n弃衣登高\n妄言骂詈\n神失所主",
+            "四肢阳本\n气盛肢实\n越垣上屋\n热极狂行",
+            "衣弃奔走\n身若燔炭\n神昏识乱\n不避亲疏",
+            "胃热熏心\n歌呼妄言\n食不知味\n逾垣疾驰",
+            "阳邪上扰\n神明失守\n正邪相搏\n经脉贲张",
+            "厥逆分经\n连脏则亡\n及脉可救\n深浅异途",
+            "重阳之极\n物极必反\n泻热存阴\n白虎当先"
+            ] 
+        };
+
+        const stageNames = [
+        "五行病机", "热邪反应",
+        "气逆恶人", "阳亢神狂",
+        "阳盛病机", "弃衣证候",
+        "胃热扰神", "神明失守",
+        "厥逆预后", "治则枢要"
+        ];
+
+        const calculateSizes = () => {
+            const container = document.getElementById('main');
+            const width = container.clientWidth;
+            const height = container.clientHeight;            
+            const chartOuterRadius = Math.min(width, height) * 0.9 * 0.5;
+            const baseRadius = chartOuterRadius * styleConfig.circleMultiplier;
+            
+            return {
+                canvasSize: baseRadius * 2 * 1.5,
+                baseRadius: baseRadius,
+                solidRadius: baseRadius * (1 - styleConfig.solidLineOffset),
+                dashRadius: baseRadius * (1 + styleConfig.dashLineOffset),
+                chartCenter: [width/2, height],
+                chartOuterRadius: chartOuterRadius
+            };
+        };
+
+        const initCanvas = (sizes) => {
+            const canvas = document.getElementById('myCanvas');
+            const container = document.getElementById('canvasContainer');
+            const labelContainer = document.getElementById('labelContainer');
+            
+            canvas.width = sizes.canvasSize;
+            canvas.height = sizes.canvasSize;
+            labelContainer.innerHTML = '';
+        
+            container.style.width = `${sizes.canvasSize}px`;
+            container.style.height = `${sizes.canvasSize}px`;
+            container.style.left = `${sizes.chartCenter[0] - sizes.canvasSize/2}px`;
+            container.style.top = `${sizes.chartCenter[1] - sizes.canvasSize/2 * 0.95}px`;
+        
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // 检测悬停在线段末端圆点
+                styleConfig.labels.forEach((_, i) => {
+                    const angle = 180 + i * 18 + 9.5;
+                    const radian = angle * Math.PI / 180;
+                    const endX = canvas.width/2 + Math.cos(radian) * (sizes.dashRadius + styleConfig.segmentLine.length);
+                    const endY = canvas.height/2 + Math.sin(radian) * (sizes.dashRadius + styleConfig.segmentLine.length);
+                    
+                    if (distance(x, y, endX, endY) < 15) {
+                        canvas.style.transform = `scale(${styleConfig.hoverStyle.scale})`;
+                        canvas.style.filter = `drop-shadow(${styleConfig.hoverStyle.shadow})`;
+                        labelContainer.children[i].style.background = styleConfig.hoverStyle.labelBg;
+                        return;
+                    }
+                });
+            });
+            
+            canvas.addEventListener('mouseleave', () => {
+                canvas.style.transform = 'scale(1)';
+                canvas.style.filter = 'none';
+                [...labelContainer.children].forEach(label => label.style.background = 'none');
+            });
+        
+            // 绘制三层圆环
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, sizes.dashRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = styleConfig.dashLineColor;
+            ctx.lineWidth = styleConfig.dashLineWidth;
+            ctx.setLineDash([5, 3]);
+            ctx.stroke();
+        
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, sizes.baseRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = styleConfig.borderColor;
+            ctx.lineWidth = styleConfig.circleBorderWidth;
+            ctx.setLineDash([]);
+            ctx.stroke();
+        
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, sizes.solidRadius, 0, 2 * Math.PI);
+            ctx.strokeStyle = styleConfig.borderColor;
+            ctx.lineWidth = styleConfig.solidLineWidth;
+            ctx.stroke();
+        
+        // 绘制线段和标签
+        const segmentAngle = 18;
+        styleConfig.labels.forEach((label, i) => {
+        // 封装图片绘制函数
+        function drawImage(ctx, options, canvasSize) {
+            const img = new Image();
+            img.src = options.path;
+            img.onload = function() {
+                const originalWidth = img.width;
+                const originalHeight = img.height;
+        
+        // 计算缩放比例
+        const scale = Math.min(
+            options.targetWidth / originalWidth,
+            options.targetHeight / originalHeight
+        );
+        
+        // 计算绘制尺寸
+        const drawWidth = canvasSize * options.widthRatio;
+        const drawHeight = canvasSize * options.heightRatio;
+
+        // 根据比例计算实际位置
+        const posX = canvasSize * options.xRatio - drawWidth / 2;
+        const posY = canvasSize * options.yRatio - drawHeight / 2;
+
+        // 保存绘图状态
+        ctx.save();
+        
+        // 设置透明度
+        ctx.globalAlpha = options.opacity ?? 1;  // 默认不透明
+
+        // 处理旋转逻辑
+        // 如果需要旋转
+        if (options.rotate !== undefined) {
+            ctx.translate(posX + drawWidth / 2, posY + drawHeight / 2);
+            ctx.rotate(options.rotate * Math.PI / 180);
+            ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+        } else {
+            ctx.drawImage(img, posX, posY, drawWidth, drawHeight);
+        }
+        // 恢复绘图状态
+        ctx.restore();
+    };
+}
+
+    // 图片配置列表
+       const imageConfigs = [
+    {
+        path: "images/qibo.png",
+        xRatio: 0.51, yRatio: 0.42,
+        widthRatio: 0.135, heightRatio: 0.145,
+        opacity: 0.8
+    },
+    
+    {
+        path: "images/zhen.png",
+        xRatio: 0.24, yRatio: 0.43,
+        widthRatio: 0.07, heightRatio: 0.11,
+        rotate: 285
+    },
+    {
+        path: "images/jiu0.png",
+        xRatio: 0.26, yRatio: 0.35,
+        widthRatio: 0.07, heightRatio: 0.11,
+        rotate: -70
+    },
+    {
+        path: "images/wang.png",
+        xRatio: 0.34, yRatio: 0.275,
+        widthRatio: 0.08, heightRatio: 0.09,
+        rotate: -42
+    },
+    {
+        path: "images/wen.png",
+        xRatio: 0.395, yRatio: 0.29,
+        widthRatio: 0.20, heightRatio: 0.48,
+        rotate: -9
+    },
+    {
+        path: "images/wen3.png",
+        xRatio: 0.61, yRatio: 0.188,
+        widthRatio: 0.22, heightRatio: 0.21,
+        rotate: 10
+    },
+    {
+        path: "images/qie.png",
+        xRatio: 0.64, yRatio: 0.198,
+        widthRatio: 0.22, heightRatio: 0.23,
+        rotate: 35
+    },
+    {
+        path: "images/yao.png",
+        xRatio: 0.73, yRatio: 0.345,
+        widthRatio: 0.11, heightRatio: 0.13,
+        rotate: 65
+    },
+    {
+        path: "images/bian.png",
+        xRatio: 0.77, yRatio: 0.43,
+        widthRatio: 0.07, heightRatio: 0.11,
+        rotate: 80
+    },
+    {
+        path: "images/qibozt.png",
+        xRatio: 0.41, yRatio: 0.43,
+        widthRatio: 0.025, heightRatio: 0.05,
+        opacity: 0.8
+    }
+];
+
+            // 批量绘制图片
+            imageConfigs.forEach(config => drawImage(ctx, config, sizes.canvasSize));
+                const angle = 175 + i * segmentAngle + 9.5;
+                const radian = angle * Math.PI / 180;                
+                const startRadius = sizes.dashRadius;
+                const endRadius = startRadius + styleConfig.segmentLine.length+30;
+                const startX = canvas.width/2 + Math.cos(radian) * startRadius;
+                const startY = canvas.height/2 + Math.sin(radian) * startRadius;
+                const endX = canvas.width/2 + Math.cos(radian) * endRadius;
+                const endY = canvas.height/2 + Math.sin(radian) * endRadius;
+            
+                // 绘制线段
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.strokeStyle = styleConfig.borderColor;
+                ctx.lineWidth = styleConfig.segmentLine.width;
+                ctx.stroke();
+            
+                // 绘制圆点
+                ctx.beginPath();
+                ctx.arc(endX, endY, styleConfig.segmentLine.dotSize, 0, Math.PI*2);
+                ctx.fillStyle = styleConfig.borderColor;
+                ctx.fill();
+            
+                // 创建文字标签
+                const labelEl = document.createElement('div');
+                labelEl.className = 'segment-label';
+                labelEl.innerHTML = label.replace(/\n/g, '<br>');
+        
+                // 逐一修改每个标签的位置
+                let translateX, translateY;
+                switch (i) {
+                    case 0:
+                   translateX = '-24%';
+                   translateY = '-110%';
+                   rotateAngle = '-80deg';
+                    
+                   break;
+                    case 1:
+                   translateX = '-17%';
+                   translateY = '-87%';
+                   rotateAngle = '-65deg';
+                  break;
+                   case 2:
+                   translateX = '-13%';
+                   translateY = '-68%';
+                   rotateAngle = '-47deg';
+                   break;
+                   case 3:
+                   translateX = '-12%';
+                   translateY = '-40%';
+                   rotateAngle = '-29deg';
+                   break;
+                   case 4:
+                   translateX = '-15%';
+                   translateY = '-17%';
+                   rotateAngle = '-10deg';
+                   break;
+                   case 5:
+                   translateX = '-22%';
+                   translateY = '3%';
+                   rotateAngle = '7deg';
+                   break;
+                   case 6:
+                   translateX = '-30%';
+                   translateY = '20%';
+                   rotateAngle = '28deg';
+                   break;
+                   case 7:
+                   translateX = '-43%';
+                   translateY = '25%';
+                   rotateAngle = '45deg';
+                   break;
+                   break;
+                   case 8:
+                   translateX = '-53%';
+                   translateY = '30%';
+                   rotateAngle = '63deg';
+                   break;
+                   case 9:
+                   translateX = '-66%';
+                   translateY = '20%';
+                   rotateAngle = '80deg';
+                   break;
+                   default:
+                       translateX = '-50%';
+                       translateY = '-120%';
+                       
+               }
+        
+                const absoluteX = endX + container.offsetLeft;
+                const absoluteY = endY + container.offsetTop;
+                            
+                labelEl.style.left = `${absoluteX}px`;
+                labelEl.style.top = `${absoluteY}px`;
+                labelEl.style.transform = `translate(${translateX}, ${translateY}) rotate(${rotateAngle})`;
+                            
+                labelContainer.appendChild(labelEl);
+            });
+        };                    
+
+        const initECharts = () => {
+            const chartDom = document.getElementById('chartContainer');
+            const myChart = echarts.init(chartDom);
+
+            const option = {
+                
+                series: [{
+                    type: 'pie',
+                    radius: styleConfig.chartRadius,
+                    center: ['50%', '100%'],
+                    startAngle: 180,
+                    endAngle: 360,                    
+                    label: {
+                        show: true,
+                        position: 'inner',
+                        color: styleConfig.borderColor,
+                        fontSize: 14,
+                        fontWeight: 'bold',
+                        formatter: '{b}',
+                        fontFamily:'Aa古典刻本宋',     
+                                           
+                    },
+                    data: stageNames.map(name => ({
+                        value: 10,
+                        name: name,
+                        itemStyle: {
+                            color:
+                                colors ='#FFF5E6',
+                                
+                            borderWidth: 3,
+                            borderColor: '#FFF5E6',
+                            shadowBlur: 15,
+                            shadowColor: 'rgba(124,98,63,0.3)',
+                            // 添加高亮状态
+            emphasis: {
+                borderColor: '#D8C9B1', // 高亮边框颜色
+                borderWidth: styleConfig.chartBorderWidth + 2
+            }
+                        },
+                    }))
+                }]
+            };
+
+            myChart.setOption(option);
+            myChart.on('click', (params) => {
+                const index = params.dataIndex;
+                
+                // 1. 清除所有高亮
+                document.querySelectorAll('.highlight').forEach(el => {
+                    el.classList.remove('highlight');
+                });
+                
+                // 2. 触发饼图区块高亮动画
+                const sector = document.querySelector(
+                    `[data-series-index="0"][data-data-index="${index}"] path`
+                );
+                if (sector) {
+                    sector.classList.add('highlight');
+                }
+        
+                // 3. 文字显示逻辑
+                document.querySelectorAll('.segment-label').forEach(el => {
+                    el.style.opacity = 0.5;
+                });
+                document.querySelectorAll('.segment-label')[index].style.opacity = 1;       
+            });        
+            return myChart;
+        };           
+
+        const handleResize = (myChart) => {
+            const sizes = calculateSizes();
+            initCanvas(sizes);
+            myChart.resize();
+
+           
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const myChart = initECharts();
+            handleResize(myChart);
+            window.addEventListener('resize', () => handleResize(myChart));
+        });
+
+        // 响应式文字调整函数
+        const adjustTextSizes = () => {
+            const container = document.getElementById('main');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // 动态调整 H1 标题
+            const h1Element = document.querySelector('h1');
+            h1Element.style.fontSize = `${width * 0.025}px`; // 设置为容器宽度的 2%
+
+            // 动态调整标签文字
+            const labelElements = document.querySelectorAll('.segment-label');
+            labelElements.forEach(label => {
+                label.style.fontSize = `${width * 0.012}px`; 
+                label.style.width = `${width * 0.15}px`;
+            });
+        };
+
+        // 在窗口大小改变时调整文字
+        window.addEventListener('resize', () => {
+            adjustTextSizes();
+            syncTitleBackground(); // 同步调用
+          });
+
+        // 页面加载时初始化文字大小
+        document.addEventListener('DOMContentLoaded', () => {
+            adjustTextSizes();
+            syncTitleBackground();
+            // 添加图片预加载
+        const preloadImg = new Image();
+        preloadImg.src = 'images/kuang1.png';
+        preloadImg.onload = syncTitleBackground;
+                });
+
+        // 标题背景同步函数
+    function syncTitleBackground() {
+    const title = document.querySelector('h1');
+    const bgContainer = document.querySelector('.title-bg-container');
+    const bgImg = document.querySelector('.title-bg');
+    
+    // 获取标题位置信息
+    const titleRect = title.getBoundingClientRect();
+    const mainRect = document.getElementById('main').getBoundingClientRect();
+    
+    // 计算背景容器尺寸（基于字体尺寸）
+    const fontSize = parseFloat(window.getComputedStyle(title).fontSize);
+    const bgWidth = fontSize * 10;  
+    const bgHeight = fontSize * 2.5;  
+    
+    // 设置背景位置（跟随标题）
+    bgContainer.style.width = `${bgWidth}px`;
+    bgContainer.style.height = `${bgHeight}px`;
+    bgContainer.style.left = `${titleRect.left + mainRect.left - bgWidth * 0.40}px`;
+    bgContainer.style.top = `${titleRect.top + mainRect.top + bgHeight * 0.99}px`;
+    
+    // 保持垂直书写模式适配    
+      bgImg.style.transform = `rotate(90deg) scale(1.15)`;
+  }
+    </script>
+</body>
+</html>
